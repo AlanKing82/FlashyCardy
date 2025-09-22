@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+description: shadcn/ui component library usage and setup
+---
+
+# shadcn/ui Component Library
+
+This project uses shadcn/ui for all UI elements. The project is already initialized with shadcn/ui as evidenced by [components.json](mdc:components.json).
+
+## Setup Commands
+
+### Initial Setup (if not already done)
+If shadcn is not initialized, use:
+```bash
+npx shadcn@latest init
+```
+
+### Adding Components
+To add a specific component (e.g., button, card, input), use:
+```bash
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add input
+```
+
+## Project Configuration
+
+- **Components Directory**: `@/components` (aliased in [components.json](mdc:components.json))
+- **Utils Directory**: `@/lib/utils` (aliased in [components.json](mdc:components.json))
+- **Style**: Default shadcn style
+- **CSS Variables**: Enabled
+- **Base Color**: Slate
+- **Tailwind Config**: [tailwind.config.ts](mdc:tailwind.config.ts)
+- **Global CSS**: [app/globals.css](mdc:app/globals.css)
+
+## Usage Guidelines
+
+1. **Always use shadcn components** for UI elements instead of creating custom components
+2. **Check if component exists** before creating new UI elements
+3. **Install missing components** using the `npx shadcn@latest add <component-name>` command
+4. **Import components** from `@/components/ui/` directory
+5. **Use the utility function** from `@/lib/utils` for className merging (cn function)
+
+## Common Components to Consider
+
+- `button` - For all button interactions
+- `card` - For content containers
+- `input` - For form inputs
+- `label` - For form labels
+- `textarea` - For multi-line text input
+- `select` - For dropdown selections
+- `dialog` - For modals and popups
+- `toast` - For notifications
+- `badge` - For status indicators
+- `avatar` - For user profile images
+- `separator` - For visual dividers
+- `skeleton` - For loading states
