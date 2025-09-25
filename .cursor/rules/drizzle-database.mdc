@@ -1,0 +1,84 @@
+---
+alwaysApply: true
+description: Database interactions must always use Drizzle schema and queries
+---
+
+# Drizzle Database Rules
+
+This project uses Drizzle ORM for all database interactions. All database operations must follow these guidelines:
+
+## Schema Location
+- **Database Schema**: [src/db/schema.ts](mdc:src/db/schema.ts)
+- **Database Connection**: [src/db/index.ts](mdc:src/db/index.ts)
+- **Drizzle Config**: [drizzle.config.ts](mdc:drizzle.config.ts)
+
+## Required Imports
+Always import the database connection and schema:
+```typescript
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+```
+
+## Database Tables
+- **decksTable**: Contains flashcard decks with fields: id, name, description, userId, createdAt, updatedAt
+- **cardsTable**: Contains flashcards with fields: id, front, back, deckId, createdAt, updatedAt
+
+## Query Guidelines
+
+### 1. Always use Drizzle queries
+```typescript
+// ✅ Correct - Use Drizzle query builder
+const decks = await db.select().from(decksTable).where(eq(decksTable.userId, userId));
+
+// ❌ Wrong - Don't use raw SQL
+const decks = await db.execute(sql`SELECT * FROM decks WHERE userId = ${userId}`);
+```
+
+### 2. Use proper imports for query operations
+```typescript
+import { eq, and, or, desc, asc } from 'drizzle-orm';
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+```
+
+### 3. Always use the schema tables
+```typescript
+// ✅ Correct - Use exported tables from schema
+await db.select().from(decksTable);
+
+// ❌ Wrong - Don't reference tables directly
+await db.select().from('decks');
+```
+
+### 4. Handle relationships properly
+```typescript
+// ✅ Correct - Use proper joins with schema tables
+const deckWithCards = await db
+  .select()
+  .from(decksTable)
+  .leftJoin(cardsTable, eq(decksTable.id, cardsTable.deckId))
+  .where(eq(decksTable.id, deckId));
+```
+
+### 5. Use transactions for multiple operations
+```typescript
+// ✅ Correct - Use Drizzle transactions
+await db.transaction(async (tx) => {
+  await tx.insert(decksTable).values(deckData);
+  await tx.insert(cardsTable).values(cardData);
+});
+```
+
+## Migration Guidelines
+- Run migrations with: `npx drizzle-kit push`
+- Generate migrations with: `npx drizzle-kit generate`
+- Always test migrations in development before production
+
+## Error Handling
+Always wrap database operations in try-catch blocks and handle Drizzle-specific errors appropriately.
+
+## Performance
+- Use proper indexing (defined in schema)
+- Use select() with specific fields when possible
+- Use limit() and offset() for pagination
+- Use prepared statements for repeated queries

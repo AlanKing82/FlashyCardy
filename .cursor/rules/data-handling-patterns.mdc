@@ -1,0 +1,449 @@
+---
+alwaysApply: true
+description: Data handling patterns for server components, server actions, and Zod validation
+---
+
+# Data Handling Patterns
+
+This project follows strict patterns for data operations. **CRITICAL**: All data retrieval must use server components, all mutations must use server actions, and all data must be validated with Zod.
+
+## Core Principles
+
+### 1. Data Retrieval - Server Components ONLY
+```typescript
+// ✅ Correct - Use server components for data fetching
+import { auth } from "@clerk/nextjs/server";
+import { db } from '@/src/db';
+import { decksTable } from '@/src/db/schema';
+import { eq } from 'drizzle-orm';
+
+export default async function DecksPage() {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    redirect("/sign-in");
+  }
+  
+  // Data retrieval in server component
+  const decks = await db.select()
+    .from(decksTable)
+    .where(eq(decksTable.userId, userId));
+    
+  return (
+    <div>
+      {decks.map(deck => (
+        <div key={deck.id}>{deck.name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 2. Data Mutations - Server Actions ONLY
+```typescript
+// ✅ Correct - Use server actions for all mutations
+'use server';
+
+import { auth } from "@clerk/nextjs/server";
+import { db } from '@/src/db';
+import { decksTable } from '@/src/db/schema';
+import { z } from 'zod';
+
+// Define Zod schema for validation
+const CreateDeckSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name too long"),
+  description: z.string().optional(),
+});
+
+type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
+
+export async function createDeck(input: CreateDeckInput) {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+  
+  // Validate input with Zod
+  const validatedData = CreateDeckSchema.parse(input);
+  
+  // Perform database operation
+  const [newDeck] = await db.insert(decksTable).values({
+    ...validatedData,
+    userId: userId,
+  }).returning();
+  
+  return { success: true, data: newDeck };
+}
+```
+
+### 3. Zod Validation - ALWAYS Required
+```typescript
+// ✅ Correct - Always define Zod schemas with TypeScript types
+import { z } from 'zod';
+
+// Define schemas for all data operations
+const UpdateDeckSchema = z.object({
+  id: z.number().positive("Invalid deck ID"),
+  name: z.string().min(1, "Name is required").max(100, "Name too long"),
+  description: z.string().optional(),
+});
+
+const DeleteDeckSchema = z.object({
+  id: z.number().positive("Invalid deck ID"),
+});
+
+// Export TypeScript types
+export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
+export type DeleteDeckInput = z.infer<typeof DeleteDeckSchema>;
+
+// Use in server actions
+export async function updateDeck(input: UpdateDeckInput) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  // Validate input
+  const validatedData = UpdateDeckSchema.parse(input);
+  
+  // Verify ownership
+  const deck = await db.select()
+    .from(decksTable)
+    .where(and(
+      eq(decksTable.id, validatedData.id),
+      eq(decksTable.userId, userId)
+    ))
+    .limit(1);
+    
+  if (deck.length === 0) {
+    throw new Error("Deck not found or access denied");
+  }
+  
+  // Perform update
+  await db.update(decksTable)
+    .set({
+      name: validatedData.name,
+      description: validatedData.description,
+    })
+    .where(eq(decksTable.id, validatedData.id));
+}
+```
+
+## Required Patterns
+
+### Server Components for Data Display
+```typescript
+// ✅ Correct - Server component for data display
+import { auth } from "@clerk/nextjs/server";
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+import { eq } from 'drizzle-orm';
+
+export default async function DeckDetailPage({ params }: { params: { id: string } }) {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    redirect("/sign-in");
+  }
+  
+  const deckId = parseInt(params.id);
+  
+  // Fetch deck with cards
+  const deckWithCards = await db
+    .select()
+    .from(decksTable)
+    .leftJoin(cardsTable, eq(decksTable.id, cardsTable.deckId))
+    .where(and(
+      eq(decksTable.id, deckId),
+      eq(decksTable.userId, userId)
+    ));
+    
+  if (deckWithCards.length === 0) {
+    notFound();
+  }
+  
+  return (
+    <div>
+      <h1>{deckWithCards[0].decksTable.name}</h1>
+      {/* Render cards */}
+    </div>
+  );
+}
+```
+
+### Server Actions for All Mutations
+```typescript
+// ✅ Correct - Server actions with proper validation
+'use server';
+
+import { auth } from "@clerk/nextjs/server";
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+import { eq, and } from 'drizzle-orm';
+import { z } from 'zod';
+
+// Define comprehensive schemas
+const CreateCardSchema = z.object({
+  deckId: z.number().positive("Invalid deck ID"),
+  front: z.string().min(1, "Front text is required").max(500, "Front text too long"),
+  back: z.string().min(1, "Back text is required").max(500, "Back text too long"),
+});
+
+const UpdateCardSchema = z.object({
+  id: z.number().positive("Invalid card ID"),
+  front: z.string().min(1, "Front text is required").max(500, "Front text too long"),
+  back: z.string().min(1, "Back text is required").max(500, "Back text too long"),
+});
+
+export type CreateCardInput = z.infer<typeof CreateCardSchema>;
+export type UpdateCardInput = z.infer<typeof UpdateCardSchema>;
+
+export async function createCard(input: CreateCardInput) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  // Validate input
+  const validatedData = CreateCardSchema.parse(input);
+  
+  // Verify deck ownership
+  const deck = await db.select()
+    .from(decksTable)
+    .where(and(
+      eq(decksTable.id, validatedData.deckId),
+      eq(decksTable.userId, userId)
+    ))
+    .limit(1);
+    
+  if (deck.length === 0) {
+    throw new Error("Deck not found or access denied");
+  }
+  
+  // Create card
+  const [newCard] = await db.insert(cardsTable).values({
+    deckId: validatedData.deckId,
+    front: validatedData.front,
+    back: validatedData.back,
+  }).returning();
+  
+  return { success: true, data: newCard };
+}
+
+export async function updateCard(input: UpdateCardInput) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  // Validate input
+  const validatedData = UpdateCardSchema.parse(input);
+  
+  // Verify card ownership through deck
+  const card = await db.select()
+    .from(cardsTable)
+    .innerJoin(decksTable, eq(cardsTable.deckId, decksTable.id))
+    .where(and(
+      eq(cardsTable.id, validatedData.id),
+      eq(decksTable.userId, userId)
+    ))
+    .limit(1);
+    
+  if (card.length === 0) {
+    throw new Error("Card not found or access denied");
+  }
+  
+  // Update card
+  await db.update(cardsTable)
+    .set({
+      front: validatedData.front,
+      back: validatedData.back,
+    })
+    .where(eq(cardsTable.id, validatedData.id));
+    
+  return { success: true };
+}
+```
+
+## Client-Side Integration
+
+### Form Handling with Server Actions
+```typescript
+// ✅ Correct - Client component using server actions
+'use client';
+
+import { useState } from 'react';
+import { createDeck } from '@/app/actions/deck-actions';
+import { CreateDeckInput } from '@/app/actions/deck-actions';
+
+export function CreateDeckForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(event.currentTarget);
+    
+    // Convert FormData to typed object
+    const input: CreateDeckInput = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string || undefined,
+    };
+    
+    try {
+      const result = await createDeck(input);
+      if (result.success) {
+        // Handle success
+        window.location.reload(); // Or use router.refresh()
+      }
+    } catch (error) {
+      // Handle error
+      console.error('Failed to create deck:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="name" placeholder="Deck name" required />
+      <textarea name="description" placeholder="Description" />
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Creating...' : 'Create Deck'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Error Handling Patterns
+
+### Server Action Error Handling
+```typescript
+// ✅ Correct - Comprehensive error handling
+export async function deleteDeck(input: { id: number }) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Authentication required" };
+    }
+    
+    // Validate input
+    const validatedData = z.object({ id: z.number().positive() }).parse(input);
+    
+    // Verify ownership
+    const deck = await db.select()
+      .from(decksTable)
+      .where(and(
+        eq(decksTable.id, validatedData.id),
+        eq(decksTable.userId, userId)
+      ))
+      .limit(1);
+      
+    if (deck.length === 0) {
+      return { success: false, error: "Deck not found or access denied" };
+    }
+    
+    // Delete deck (cards will be deleted via cascade)
+    await db.delete(decksTable).where(eq(decksTable.id, validatedData.id));
+    
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid input data" };
+    }
+    
+    console.error("Delete deck error:", error);
+    return { success: false, error: "Failed to delete deck" };
+  }
+}
+```
+
+## Required Imports
+
+### Server Components
+```typescript
+import { auth } from "@clerk/nextjs/server";
+import { redirect, notFound } from "next/navigation";
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+import { eq, and, or, desc, asc } from 'drizzle-orm';
+```
+
+### Server Actions
+```typescript
+'use server';
+
+import { auth } from "@clerk/nextjs/server";
+import { db } from '@/src/db';
+import { decksTable, cardsTable } from '@/src/db/schema';
+import { eq, and, or } from 'drizzle-orm';
+import { z } from 'zod';
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ Wrong - Using API routes for data operations
+```typescript
+// ❌ Don't use API routes for CRUD operations
+export async function GET() {
+  // This should be in a server component instead
+}
+```
+
+### ❌ Wrong - Using FormData type in server actions
+```typescript
+// ❌ Don't use FormData as parameter type
+export async function createDeck(formData: FormData) {
+  // Convert FormData to typed object and validate with Zod
+}
+```
+
+### ❌ Wrong - Client-side data fetching
+```typescript
+// ❌ Don't fetch data in client components
+'use client';
+export function MyComponent() {
+  const [data, setData] = useState();
+  
+  useEffect(() => {
+    // Don't fetch data here - use server components
+    fetch('/api/decks').then(res => res.json()).then(setData);
+  }, []);
+}
+```
+
+### ❌ Wrong - Skipping Zod validation
+```typescript
+// ❌ Don't skip validation
+export async function createDeck(input: any) {
+  // Always validate with Zod
+  const validatedData = CreateDeckSchema.parse(input);
+}
+```
+
+## File Organization
+
+### Server Actions
+- Place in `app/actions/` directory
+- Group by feature: `deck-actions.ts`, `card-actions.ts`
+- Export types alongside actions
+
+### Server Components
+- Place in `app/` directory or feature directories
+- Use descriptive names: `decks/page.tsx`, `deck/[id]/page.tsx`
+
+### Zod Schemas
+- Define schemas in the same file as server actions
+- Export TypeScript types alongside schemas
+- Use descriptive schema names: `CreateDeckSchema`, `UpdateCardSchema`
+
+## Checklist
+
+### Before Every Data Operation:
+1. ✅ Use server components for data retrieval
+2. ✅ Use server actions for mutations
+3. ✅ Define Zod schema for validation
+4. ✅ Export TypeScript types
+5. ✅ Validate all inputs with Zod
+6. ✅ Authenticate user with Clerk
+7. ✅ Verify data ownership
+8. ✅ Handle errors appropriately
+9. ✅ Use proper Drizzle queries
+10. ✅ Never use FormData as parameter type
