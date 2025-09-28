@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function Dashboard() {
   const { userId } = await auth()
@@ -17,20 +18,32 @@ export default async function Dashboard() {
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold text-card-foreground">My Decks</h2>
-            <p className="text-sm text-muted-foreground">Manage your flashcard decks</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>My Decks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Manage your flashcard decks</p>
+            </CardContent>
+          </Card>
           
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold text-card-foreground">Study Progress</h2>
-            <p className="text-sm text-muted-foreground">Track your learning progress</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Study Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Track your learning progress</p>
+            </CardContent>
+          </Card>
           
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold text-card-foreground">Recent Activity</h2>
-            <p className="text-sm text-muted-foreground">Your latest study sessions</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Your latest study sessions</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
