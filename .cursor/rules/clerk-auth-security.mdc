@@ -1,8 +1,6 @@
 ---
-alwaysApply: true
-description: Clerk authentication and data access control rules
+alwaysApply: false
 ---
-
 # Clerk Authentication & Data Security Rules
 
 This project uses **Clerk** for all authentication. **CRITICAL**: Users can ONLY access their own data. All database operations must enforce user isolation.
@@ -26,7 +24,7 @@ export default async function MyPage() {
   const { userId } = await auth();
   
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/"); // Redirect to homepage where buttons are located
   }
   
   // Use userId for data queries
@@ -178,7 +176,8 @@ const deckWithCards = await db.select()
 ### Protected Routes
 ```typescript
 // ✅ Correct - Use Clerk components for client-side protection
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
 export default function ProtectedPage() {
   return (
@@ -188,7 +187,7 @@ export default function ProtectedPage() {
         <UserDashboard />
       </SignedIn>
       <SignedOut>
-        <RedirectToSignIn />
+        {redirect("/")}
       </SignedOut>
     </>
   );
@@ -204,7 +203,7 @@ export function UserProfile() {
   const { user, isLoaded } = useUser();
   
   if (!isLoaded) return <div>Loading...</div>;
-  if (!user) return <div>Please sign in</div>;
+  if (!user) return <div>Please sign in to continue</div>;
   
   return <div>Welcome, {user.firstName}!</div>;
 }
@@ -254,7 +253,5 @@ export async function getUserDecks() {
 Ensure these Clerk environment variables are set:
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
-- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
-- `NEXT_PUBLIC_CLERK_SIGN_UP_URL`
 - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
 - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`

@@ -29,7 +29,7 @@ export default function RootLayout({
   readonly children: React.ReactNode
 }) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider appearance={{ baseTheme: dark }} afterSignOutUrl="/">
       <html lang="en" className="dark">
         <body className={`${poppins.variable} font-sans`}>
           <header className="border-b border-gray-200 dark:border-gray-800 p-4">
