@@ -2,6 +2,7 @@ import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs"
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function Home() {
   const { userId } = await auth()
@@ -21,18 +22,25 @@ export default async function Home() {
           Your personal flashcard platform
         </p>
         <SignedOut>
-          <div className="flex gap-4 justify-center">
-            <SignInButton mode="modal">
-              <Button variant="outline">
-                Sign In
-              </Button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <Button>
-                Sign Up
-              </Button>
-            </SignUpButton>
-          </div>
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-center">Get Started</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 justify-center">
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="flex-1">
+                    Sign In
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button className="flex-1">
+                    Sign Up
+                  </Button>
+                </SignUpButton>
+              </div>
+            </CardContent>
+          </Card>
         </SignedOut>
       </div>
     </main>

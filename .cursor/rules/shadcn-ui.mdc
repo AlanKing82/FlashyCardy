@@ -3,9 +3,135 @@ alwaysApply: true
 description: shadcn/ui component library usage and setup
 ---
 
-# shadcn/ui Component Library
+# shadcn/ui Component Library - STRICT RULES
 
-This project uses shadcn/ui for all UI elements. The project is already initialized with shadcn/ui as evidenced by [components.json](mdc:components.json).
+**CRITICAL**: This project uses **ONLY** shadcn/ui components for all UI elements. **ABSOLUTELY NO CUSTOM UI COMPONENTS** are allowed in this project.
+
+## 🚫 STRICT PROHIBITIONS
+
+### ❌ NEVER CREATE CUSTOM UI COMPONENTS
+- **NO** custom buttons, cards, inputs, or any UI elements
+- **NO** custom styling beyond shadcn/ui components
+- **NO** custom CSS classes for UI elements
+- **NO** custom form components
+- **NO** custom modal implementations
+- **NO** custom navigation components
+- **NO** custom layout components
+
+### ❌ NEVER USE ALTERNATIVE UI LIBRARIES
+- **NO** Material-UI, Ant Design, Chakra UI, or other component libraries
+- **NO** custom Tailwind component implementations
+- **NO** custom styled components
+
+## ✅ MANDATORY REQUIREMENTS
+
+### 1. ONLY Use shadcn/ui Components
+```typescript
+// ✅ CORRECT - Always use shadcn components
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+// ❌ WRONG - Never create custom components
+function CustomButton() { return <button>...</button>; }
+```
+
+### 2. Install Missing Components First
+Before implementing any UI element, check if a shadcn component exists:
+```bash
+# Install required components
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add input
+npx shadcn@latest add dialog
+npx shadcn@latest add form
+```
+
+### 3. Clerk Authentication Integration
+**ALL Clerk authentication must use shadcn/ui components:**
+
+#### Sign In/Sign Up Buttons
+```typescript
+// ✅ CORRECT - Use shadcn Button with Clerk
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+
+export function AuthButtons() {
+  return (
+    <div className="flex gap-2">
+      <SignInButton mode="modal">
+        <Button variant="outline">Sign In</Button>
+      </SignInButton>
+      <SignUpButton mode="modal">
+        <Button>Sign Up</Button>
+      </SignUpButton>
+    </div>
+  );
+}
+```
+
+#### User Profile Components
+```typescript
+// ✅ CORRECT - Use shadcn components for user profile
+import { UserButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+export function UserProfile() {
+  return (
+    <div className="flex items-center gap-2">
+      <UserButton 
+        appearance={{
+          elements: {
+            avatarBox: "w-8 h-8"
+          }
+        }}
+      />
+    </div>
+  );
+}
+```
+
+#### Modal Authentication
+```typescript
+// ✅ CORRECT - Use shadcn Dialog for authentication modals
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+export function AuthModal() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Sign In</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Authentication</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <SignInButton mode="modal">
+            <Button className="w-full">Sign In</Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button variant="outline" className="w-full">Sign Up</Button>
+          </SignUpButton>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+## Project Configuration
+
+- **Components Directory**: `@/components` (aliased in [components.json](mdc:components.json))
+- **Utils Directory**: `@/lib/utils` (aliased in [components.json](mdc:components.json))
+- **Style**: Default shadcn style
+- **CSS Variables**: Enabled
+- **Base Color**: Slate
+- **Tailwind Config**: [tailwind.config.ts](mdc:tailwind.config.ts)
+- **Global CSS**: [app/globals.css](mdc:app/globals.css)
 
 ## Setup Commands
 
@@ -21,37 +147,110 @@ To add a specific component (e.g., button, card, input), use:
 npx shadcn@latest add button
 npx shadcn@latest add card
 npx shadcn@latest add input
+npx shadcn@latest add dialog
+npx shadcn@latest add form
+npx shadcn@latest add avatar
 ```
-
-## Project Configuration
-
-- **Components Directory**: `@/components` (aliased in [components.json](mdc:components.json))
-- **Utils Directory**: `@/lib/utils` (aliased in [components.json](mdc:components.json))
-- **Style**: Default shadcn style
-- **CSS Variables**: Enabled
-- **Base Color**: Slate
-- **Tailwind Config**: [tailwind.config.ts](mdc:tailwind.config.ts)
-- **Global CSS**: [app/globals.css](mdc:app/globals.css)
 
 ## Usage Guidelines
 
-1. **Always use shadcn components** for UI elements instead of creating custom components
-2. **Check if component exists** before creating new UI elements
-3. **Install missing components** using the `npx shadcn@latest add <component-name>` command
+1. **ONLY use shadcn components** - NO exceptions
+2. **Check if component exists** before implementing any UI element
+3. **Install missing components** using `npx shadcn@latest add <component-name>`
 4. **Import components** from `@/components/ui/` directory
 5. **Use the utility function** from `@/lib/utils` for className merging (cn function)
+6. **Clerk authentication must use shadcn buttons and dialogs**
 
-## Common Components to Consider
+## Required Components for This Project
 
-- `button` - For all button interactions
+### Essential Components
+- `button` - For ALL button interactions (including Clerk auth)
 - `card` - For content containers
 - `input` - For form inputs
 - `label` - For form labels
 - `textarea` - For multi-line text input
 - `select` - For dropdown selections
-- `dialog` - For modals and popups
+- `dialog` - For modals and popups (including Clerk auth)
+- `form` - For form handling
+- `avatar` - For user profile images
+
+### Additional Components
 - `toast` - For notifications
 - `badge` - For status indicators
-- `avatar` - For user profile images
 - `separator` - For visual dividers
 - `skeleton` - For loading states
+- `sheet` - For side panels
+- `dropdown-menu` - For dropdown menus
+- `tabs` - For tabbed interfaces
+- `accordion` - For collapsible content
+
+## Enforcement Rules
+
+### Code Review Checklist
+Before any commit, verify:
+- [ ] No custom UI components created
+- [ ] All UI elements use shadcn components
+- [ ] Clerk authentication uses shadcn buttons/dialogs
+- [ ] No custom CSS classes for UI elements
+- [ ] All imports are from `@/components/ui/`
+
+### Violation Consequences
+Any custom UI components will be **immediately rejected** and must be replaced with shadcn components.
+
+## Examples of What NOT to Do
+
+```typescript
+// ❌ WRONG - Custom button component
+function CustomButton({ children, onClick }) {
+  return (
+    <button 
+      className="bg-blue-500 text-white px-4 py-2 rounded"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ❌ WRONG - Custom card component
+function CustomCard({ children }) {
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6">
+      {children}
+    </div>
+  );
+}
+
+// ❌ WRONG - Custom form input
+function CustomInput({ placeholder }) {
+  return (
+    <input 
+      className="border border-gray-300 rounded px-3 py-2"
+      placeholder={placeholder}
+    />
+  );
+}
+```
+
+## Examples of What TO Do
+
+```typescript
+// ✅ CORRECT - Use shadcn components
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>My Card</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Enter text" />
+        <Button>Submit</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
