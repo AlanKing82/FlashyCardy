@@ -30,20 +30,21 @@ export default async function Decks() {
             </Card>
           ) : (
             decks.map(deck => (
-              <Card key={deck.id} className="flex flex-col justify-between">
-                <CardHeader>
-                  <CardTitle>{deck.name}</CardTitle>
-                  <div className="text-xs text-muted-foreground">{new Date(deck.createdAt).toLocaleDateString()}</div>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4 text-sm text-muted-foreground">{deck.description || "No description"}</p>
-                  <Link href={`/decks/${deck.id}/study`} passHref legacyBehavior>
-                    <a>
-                      <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Study</button>
-                    </a>
-                  </Link>
-                </CardContent>
-              </Card>
+                <Link key={deck.id} href={`/decks/${deck.id}`} passHref legacyBehavior>
+                  <a className="block">
+                    <Card className="flex flex-col justify-between cursor-pointer hover:shadow-lg transition">
+                      <CardHeader>
+                        <CardTitle>{deck.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="mb-4 text-sm text-muted-foreground">{deck.description || "No description"}</p>
+                      </CardContent>
+                      <div className="px-6 pb-4 pt-4 text-xs text-muted-foreground border-t flex items-center">
+                        <span className="self-center">Last updated: {new Date(deck.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                    </Card>
+                  </a>
+                </Link>
             ))
           )}
         </div>
