@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { getDecksByUserId } from "@/src/db/queries"
+import { ChevronLeftIcon } from "@/components/ui/chevron-left"
 
 export default async function Decks() {
   const { userId } = await auth();
@@ -15,7 +16,13 @@ export default async function Decks() {
     <div className="container mx-auto py-8">
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">My Decks</h1>
+          <Link href="/dashboard" passHref legacyBehavior>
+            <a className="inline-flex items-center text-blue-600 hover:underline mb-2 text-sm font-medium">
+              <ChevronLeftIcon className="mr-1 h-4 w-4" />
+              Back to Dashboard
+            </a>
+          </Link>
+          <h1 className="text-3xl font-bold text-foreground mt-2">My Decks</h1>
           <p className="text-muted-foreground">Here you can manage all your flashcard decks.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
